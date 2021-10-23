@@ -91,5 +91,133 @@ module processor(
     input [31:0] data_readRegA, data_readRegB;
 
     /* YOUR CODE STARTS HERE */
-
+	 
+	 /*I am gonna to implement control using ROM*/
+	 //The control bit will be :
+	 // BR JR ALUinB ALUop(4bits) DMwe Rwe Rdst Rwd		[Rdst is actually not used]
+	 reg [11:0] control [15:0];
+	 
+	 initial
+	 begin
+		// BR JR ALUinB ALUop(5bits) DMwe Rwe Rdst Rwd
+		//control bits for R type: add, sub, and, or, sll, sra
+		control[5'b00000] = 12'b000xxxxx0110;
+		//control bits for addi
+		control[5'b00101] = 12'b001000000100;
+		//control bits for sw
+		control[5'b00111] = 12'b0010000010xx;
+		//control bits for lw
+		control[5'b01000] = 12'b001000000101;
+	 end
+	 
+	 
+	 
+	/*initialise my alu*/
+	wire [31:0] data_operandA, data_operandB;
+	wire [4:0] ctrl_ALUopcode, ctrl_shiftamt;
+	wire [31:0] data_result;
+	wire isNotEqual, isLessThan, overflow;
+	alu alu1(data_operandA, 
+				data_operandB, 
+				ctrl_ALUopcode,
+				ctrl_shiftamt, 
+				data_result, 
+				isNotEqual, 
+				isLessThan, 
+				overflow);
+	
+	/*cycles*/
+	
+	
+	
+	/*fetch the instruction which is q_imem*/
+	
+	
+	
+	//first: get the opcode
+	wire [4:0] opcode;
+	assign opcode = q_imem[31:27];
+	//second: get the ctrl signal according to the control opcode
+	wire [11:0] ctrl;
+	assign ctrl = control[opcode];
+	
+	//aluOp is 0 if opcode is 00000, else 1
+	wire aluOp;
+	and and_(aluOp, opcode[0], opcode[1], opcode[2], opcode[3], opcode[4]);
+	
+	
+	
+	
+	/*RegFile*/
+    
+	//Rwe signal
+	assign ctrl_writeEnable = ctrl[2];
+	//$reg write 
+	assign ctrl_writeReg = q_imem[26:22];
+	
+	
+	//accomadate for sw $rd, (N)$rs   [opcode: 00111]
+	wire w1, w2, w3;
+	not not1(w1, opcode[4]);
+	not not2(w2, opcode[3]);
+	and and1(w3, w1,w2,opcode[2], opcode[1], opcode[0]);
+	//$reg read A (when sw, it is $rs, else it is still $rs)
+	assign ctrl_readRegA = q_imem[21:17];
+	//$reg read B	(when sw, it is $rd, otherwise, it is it is $rt)
+	assign ctrl_readRegB = w3 ? q_imem[26:22]:q_imem[16:12];
+	
+	
+	
+	
+	
+	
+	
+	
+	/*ALU signal*/
+	
+	
+	//give signal to ctrl_ALUopCode
+	//if opcode is 00000: aluop comes from instruction
+	//else: aluop comes from ctrl signal
+	assign ctrl_ALUopcode = aluOp ? ctrl[8:4] : q_imem[6:2];
+	assign data_operandA = data_readRegA;	//assign data_operand A
+	//assign data operand B
+	//we need the sign extension immediate
+	//get the signed_immediate
+	wire [31:0] s_immediate; 
+	assign s_immediate[16:0] = q_imem[16:0];
+	//sign extended immediate
+	assign s_immediate[31:17] = q_imem[16] ? 15'b111111111111111:15'b000000000000000;
+	//add a mux between the immediate and the data_readRegB
+	wire ALUinB;
+	assign ALUinB = ctrl[9];
+	//For data_operandB, we need a mux to select between immediate and data_readRegB
+	assign data_operandB = ALUinB ? s_immediate : data_readRegB;
+	assign ctrl_shiftamt = q_imem[11:7];
+	
+	//if there is an overflow, we need to change ctrl_writeReg to $30 and change data_writeReg to 1,2,3 accordingly
+	//this means we need to overwrite ctrl_writeReg and data_writeReg
+	//TODO::
+	
+	
+	/*data memo*/
+	
+	
+	
+	// Dmem
+    //output [11:0] address_dmem;
+    //output [31:0] data;
+    //output wren;
+    //input [31:0] q_dmem;
+	
+	assign address_dmem = data_result;
+	assign data = data_readRegB;
+	assign wren = ctrl[3];	//assign with DMwe contral signal
+	
+	//add a mux to select what to write to register
+	assign data_writeReg = ctrl[0] ? q_dmem : data_result;
+	
+	//add the instruction address (PC)
+	assign address_imem = address_imem + 1'd1;
+	
 endmodule
