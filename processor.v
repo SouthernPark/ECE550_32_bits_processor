@@ -143,7 +143,7 @@ module processor(
 	
 	//Op is 0 if opcode is 00000, else 1
 	wire Op;
-	and and_(Op, opcode[0], opcode[1], opcode[2], opcode[3], opcode[4]);
+	or or_(Op, opcode[0], opcode[1], opcode[2], opcode[3], opcode[4]);
 	
 	
 	
