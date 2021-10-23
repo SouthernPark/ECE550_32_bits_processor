@@ -141,9 +141,9 @@ module processor(
 	wire [11:0] ctrl;
 	assign ctrl = control[opcode];
 	
-	//aluOp is 0 if opcode is 00000, else 1
-	wire aluOp;
-	and and_(aluOp, opcode[0], opcode[1], opcode[2], opcode[3], opcode[4]);
+	//Op is 0 if opcode is 00000, else 1
+	wire Op;
+	and and_(Op, opcode[0], opcode[1], opcode[2], opcode[3], opcode[4]);
 	
 	
 	
@@ -152,8 +152,10 @@ module processor(
     
 	//Rwe signal
 	assign ctrl_writeEnable = ctrl[2];
-	//$reg write 
-	assign ctrl_writeReg = q_imem[26:22];
+	//$reg write  [$rd]
+	//when overflow occurs, $rd should be $30
+	wire overf;
+	assign ctrl_writeReg = overf ? 5'b11110 : q_imem[26:22];
 	
 	
 	//accomadate for sw $rd, (N)$rs   [opcode: 00111]
@@ -179,7 +181,7 @@ module processor(
 	//give signal to ctrl_ALUopCode
 	//if opcode is 00000: aluop comes from instruction
 	//else: aluop comes from ctrl signal
-	assign ctrl_ALUopcode = aluOp ? ctrl[8:4] : q_imem[6:2];
+	assign ctrl_ALUopcode = Op ? ctrl[8:4] : q_imem[6:2];
 	assign data_operandA = data_readRegA;	//assign data_operand A
 	//assign data operand B
 	//we need the sign extension immediate
@@ -197,11 +199,86 @@ module processor(
 	
 	//if there is an overflow, we need to change ctrl_writeReg to $30 and change data_writeReg to 1,2,3 accordingly
 	//this means we need to overwrite ctrl_writeReg and data_writeReg
-	//TODO::
+	
+	
+	//overflow1 = 1 when add overflow
+	wire w5, _w5, overflow1;
+	or or1 (w5, Op, q_imem[6], q_imem[5], q_imem[4], q_imem[3], q_imem[2]);
+	not not3(_w5, w5);
+	and and2(overflow1, _w5, overflow);
+	
+	
+	
+	//overflow2 = 1 when addi overflows
+	wire	w6, w7, w8, overflow2;
+	not not4(w6, opcode[4]);
+	not not5(w7, opcode[3]);
+	not not6(w8, opcode[1]);
+	and and3(overflow2, w6, w7, w8, opcode[0], opcode[2], overflow);
+	
+	//overflow3 = 1 when sub overflows
+	wire w9, w10, w11, w12, w13, overflow3;
+	not not7(w9, q_imem[6]);
+	not not8(w10, q_imem[5]);
+	not not9(w11, q_imem[4]);
+	not not10(w12, q_imem[3]);
+	not not11(w13, Op);
+	and and4(overflow3, w13, w9, w10, w11, w12,  q_imem[2], overflow);
+	
+	//ctrl_writereg is $30 if overflow occurs, else it is $rd
+	//using wire overf to cobtrol the mux in the regfile above
+	or or_gate(overf, overflow1, overflow2, overflow3);
+	
+	
+	
+	//alu output
+	//when overflow occurs: alu output should be 1/2/3, else output data result
+	wire [31:0] alu_output;
+	
+	//data_result_flag is 1 when overflow1 = 0, overflow2 = 0 and overflow3 = 0
+	wire data_result_flag, w14;
+	or or_gate1(w14, overflow1, overflow2, overflow3);
+	not not_gate1(data_result_flag, w14);
+	
+	//using two control bits mux select between dataresult, 1, 2 and 3
+	wire [2:0] not_overs;
+	not not12 (not_overs[2], overflow3);
+	not not13 (not_overs[1], overflow2);
+	not not14 (not_overs[0], overflow1);
+	
+	wire w15, w16, in1;
+	and and5 (w15, not_overs[0], overflow2, not_overs[2]);
+	and and6 (w16, not_overs[0], not_overs[1], overflow3);
+	or or6(in1, w15, w16);
+	
+	
+	wire w17, w18, in2;
+	and and7 (w17, overflow1, not_overs[1], not_overs[2]);
+	and and8 (w18, overflow1, overflow2, not_overs[2]);
+	or or7(in2, w17, w18);
+	
+	wire [31:0] up [1:0];
+	assign up[0] = data_result;
+	assign up[1] = 32'd1;
+	
+	wire [31:0] down [1:0];
+	assign down[0] = 32'd2;
+	assign down[1] = 32'd3;
+	
+	wire [31:0] first_level [1:0];
+	assign first_level[0] = in1 ? down[0] : up[0];
+	assign first_level[1] = in1 ? down[1] : up[1];
+	
+	assign  alu_output = in2 ? first_level[1] : first_level[0];
+	
+	
+	//assign alu_output = data_result_flag ? data_result : 32'hzzzzzzzz;
+	//assign alu_output = overflow1 ? 32'd1 : 32'hzzzzzzzz;
+	//assign alu_output = overflow2 ? 32'd2 : 32'hzzzzzzzz;
+	//assign alu_output = overflow3 ? 32'd3 : 32'hzzzzzzzz;
 	
 	
 	/*data memo*/
-	
 	
 	
 	// Dmem
@@ -210,12 +287,12 @@ module processor(
     //output wren;
     //input [31:0] q_dmem;
 	
-	assign address_dmem = data_result;
+	assign address_dmem = alu_output;
 	assign data = data_readRegB;
 	assign wren = ctrl[3];	//assign with DMwe contral signal
 	
 	//add a mux to select what to write to register
-	assign data_writeReg = ctrl[0] ? q_dmem : data_result;
+	assign data_writeReg = ctrl[0] ? q_dmem : alu_output;
 	
 	//add the instruction address (PC)
 	assign address_imem = address_imem + 1'd1;
