@@ -95,7 +95,7 @@ module processor(
 	 /*I am gonna to implement control using ROM*/
 	 //The control bit will be :
 	 // BR JR ALUinB ALUop(4bits) DMwe Rwe Rdst Rwd		[Rdst is actually not used]
-	 reg [11:0] control [15:0];
+	 reg [11:0] control [31:0];
 	 
 	 initial
 	 begin
@@ -295,6 +295,20 @@ module processor(
 	assign data_writeReg = ctrl[0] ? q_dmem : alu_output;
 	
 	//add the instruction address (PC)
-	assign address_imem = address_imem + 1'd1;
+	reg [11:0] ins_address;
+	initial
+	begin
+		ins_address = address_imem;
+	end
+	always @ (posedge clock)
+	begin
+		if(reset)
+			ins_address <= 12'd0;
+		else
+			ins_address <= address_imem + 1'd1;;
+	end
+	
+	assign address_imem = ins_address;
+	
 	
 endmodule
