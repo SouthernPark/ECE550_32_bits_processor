@@ -264,9 +264,9 @@ module processor(
 	or or6(in1, w15, w16);
 	
 	
-	wire w17, w18, in2;
+	wire w17, w18, in2; 
 	and and7 (w17, overflow1, not_overs[1], not_overs[2]);
-	and and8 (w18, overflow1, overflow2, not_overs[2]);
+	and and8 (w18, not_overs[0], not_overs[1], overflow3);
 	or or7(in2, w17, w18);
 	
 	wire [31:0] up [1:0];
