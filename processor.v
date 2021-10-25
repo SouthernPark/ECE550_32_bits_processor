@@ -69,7 +69,11 @@ module processor(
     ctrl_readRegB,                  // O: Register to read from port B of regfile
     data_writeReg,                  // O: Data to write to for regfile
     data_readRegA,                  // I: Data from port A of regfile
-    data_readRegB                   // I: Data from port B of regfile
+    data_readRegB,                   // I: Data from port B of regfile
+	 
+	 
+	 overflow_test,			//overflow test
+	 aluOp
 );
     // Control signals
     input clock, reset;
@@ -89,13 +93,17 @@ module processor(
     output [4:0] ctrl_writeReg, ctrl_readRegA, ctrl_readRegB;
     output [31:0] data_writeReg;
     input [31:0] data_readRegA, data_readRegB;
+	 
+	 
+	 //test
+	 output [4:0] overflow_test, aluOp;
 
     /* YOUR CODE STARTS HERE */
 	 
 	 /*I am gonna to implement control using ROM*/
 	 //The control bit will be :
 	 // BR JR ALUinB ALUop(4bits) DMwe Rwe Rdst Rwd		[Rdst is actually not used]
-	 reg [11:0] control [31:0];
+	 reg [11:0] control [31:0];		//[bit-width] control [number of reg]
 	 
 	 initial
 	 begin
@@ -136,10 +144,10 @@ module processor(
 	
 	//first: get the opcode
 	wire [4:0] opcode;
-	assign opcode = q_imem[31:27];
+	assign opcode[4:0] = q_imem[31:27];
 	//second: get the ctrl signal according to the control opcode
 	wire [11:0] ctrl;
-	assign ctrl = control[opcode];
+	assign ctrl[11:0] = control[opcode];
 	
 	//Op is 0 if opcode is 00000, else 1
 	wire Op;
@@ -155,8 +163,12 @@ module processor(
 	//$reg write  [$rd]
 	//when overflow occurs, $rd should be $30
 	wire overf;
-	assign ctrl_writeReg = overf ? 5'b11110 : q_imem[26:22];
+	//when overflow is unknown or overflow is 0, writeReb will be $rd, otherwise
+	//assign ctrl_writeReg[4:0] = (overf == 1'bX || overf == 1'b0) ? q_imem[26:22] : 5'b11110;
 	
+	assign ctrl_writeReg[4:0] = (overf == 1'bX || overf == 1'b0) ? q_imem[26:22] : 5'b11110;
+	
+	//assign ctrl_writeReg[4:0] = q_imem[26:22];
 	
 	//accomadate for sw $rd, (N)$rs   [opcode: 00111]
 	wire w1, w2, w3;
@@ -164,9 +176,9 @@ module processor(
 	not not2(w2, opcode[3]);
 	and and1(w3, w1,w2,opcode[2], opcode[1], opcode[0]);
 	//$reg read A (when sw, it is $rs, else it is still $rs)
-	assign ctrl_readRegA = q_imem[21:17];
+	assign ctrl_readRegA[4:0] = q_imem[21:17];
 	//$reg read B	(when sw, it is $rd, otherwise, it is it is $rt)
-	assign ctrl_readRegB = w3 ? q_imem[26:22]:q_imem[16:12];
+	assign ctrl_readRegB[4:0] = w3 ? q_imem[26:22]:q_imem[16:12];
 	
 	
 	
@@ -181,7 +193,7 @@ module processor(
 	//give signal to ctrl_ALUopCode
 	//if opcode is 00000: aluop comes from instruction
 	//else: aluop comes from ctrl signal
-	assign ctrl_ALUopcode = Op ? ctrl[8:4] : q_imem[6:2];
+	assign ctrl_ALUopcode[4:0] = Op ? ctrl[8:4] : q_imem[6:2];
 	assign data_operandA = data_readRegA;	//assign data_operand A
 	//assign data operand B
 	//we need the sign extension immediate
@@ -287,28 +299,31 @@ module processor(
     //output wren;
     //input [31:0] q_dmem;
 	
-	assign address_dmem = alu_output;
+	assign address_dmem[11:0] = alu_output[11:0];
 	assign data = data_readRegB;
 	assign wren = ctrl[3];	//assign with DMwe contral signal
 	
 	//add a mux to select what to write to register
 	assign data_writeReg = ctrl[0] ? q_dmem : alu_output;
 	
+	
+	wire [31:0] pc, pc_next;
+	
 	//add the instruction address (PC)
-	reg [11:0] ins_address;
-	initial
-	begin
-		ins_address = address_imem;
-	end
-	always @ (posedge clock)
-	begin
-		if(reset)
-			ins_address <= 12'd0;
-		else
-			ins_address <= address_imem + 1'd1;;
-	end
+	reg_32 pc_fet(pc, pc_next, 1'b1, clock, reset);
+	assign address_imem = pc[11:0];
 	
-	assign address_imem = ins_address;
+	assign pc_next = pc + 1'b1;
 	
+	
+	
+	//test
+	assign overflow_test[4] = overf;
+	assign overflow_test[3] = overflow3;
+	assign overflow_test[2] = overflow2;
+	assign overflow_test[1] = overflow1;
+	assign overflow_test[0] = overflow;
+	
+	assign aluOp = ctrl_ALUopcode;
 	
 endmodule

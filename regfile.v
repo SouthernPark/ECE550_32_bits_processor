@@ -1,3 +1,4 @@
+
 module regfile(
 	clock, ctrl_writeEnable, ctrl_reset, ctrl_writeReg,
 	ctrl_readRegA, ctrl_readRegB, data_writeReg, data_readRegA,
@@ -7,6 +8,7 @@ module regfile(
 	input [4:0] ctrl_writeReg, ctrl_readRegA, ctrl_readRegB;
 	input [31:0] data_writeReg;
 	output [31:0] data_readRegA, data_readRegB;
+	
 
 	reg[31:0] registers[31:0];
 	
@@ -25,7 +27,8 @@ module regfile(
 				registers[ctrl_writeReg] = data_writeReg;
 	end
 	
-	assign data_readRegA = ctrl_writeEnable && (ctrl_writeReg == ctrl_readRegA) ? 32'bz : registers[ctrl_readRegA];
-	assign data_readRegB = ctrl_writeEnable && (ctrl_writeReg == ctrl_readRegB) ? 32'bz : registers[ctrl_readRegB];
+	assign data_readRegA = registers[ctrl_readRegA];
+	assign data_readRegB = registers[ctrl_readRegB];
 	
+
 endmodule
