@@ -166,7 +166,7 @@ module processor(
 	//when overflow is unknown or overflow is 0, writeReb will be $rd, otherwise
 	//assign ctrl_writeReg[4:0] = (overf == 1'bX || overf == 1'b0) ? q_imem[26:22] : 5'b11110;
 	
-	assign ctrl_writeReg[4:0] = (overf == 1'bX || overf == 1'b0) ? q_imem[26:22] : 5'b11110;
+	assign ctrl_writeReg[4:0] = (overf == 1'b0) ? q_imem[26:22] : 5'b11110;
 	
 	//assign ctrl_writeReg[4:0] = q_imem[26:22];
 	
