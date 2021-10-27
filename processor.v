@@ -69,11 +69,8 @@ module processor(
     ctrl_readRegB,                  // O: Register to read from port B of regfile
     data_writeReg,                  // O: Data to write to for regfile
     data_readRegA,                  // I: Data from port A of regfile
-    data_readRegB,                   // I: Data from port B of regfile
+    data_readRegB                   // I: Data from port B of regfile
 	 
-	 
-	 overflow_test,			//overflow test
-	 aluOp
 );
     // Control signals
     input clock, reset;
@@ -94,9 +91,6 @@ module processor(
     output [31:0] data_writeReg;
     input [31:0] data_readRegA, data_readRegB;
 	 
-	 
-	 //test
-	 output [4:0] overflow_test, aluOp;
 
     /* YOUR CODE STARTS HERE */
 	 
@@ -316,14 +310,5 @@ module processor(
 	assign pc_next = pc + 1'b1;
 	
 	
-	
-	//test
-	assign overflow_test[4] = overf;
-	assign overflow_test[3] = overflow3;
-	assign overflow_test[2] = overflow2;
-	assign overflow_test[1] = overflow1;
-	assign overflow_test[0] = overflow;
-	
-	assign aluOp = ctrl_ALUopcode;
 	
 endmodule

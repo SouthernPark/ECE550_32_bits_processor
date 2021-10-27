@@ -9,12 +9,7 @@
  * inspect which signals the processor tries to assert when.
  */
 
-module skeleton(clock, reset, imem_clock, dmem_clock, processor_clock, regfile_clock,
-
-			 address_imem, q_imem, overflow_test, aluOp, address_dmem
-			,data, ctrl_writeEnable, q_dmem, ctrl_writeReg, ctrl_readRegA, ctrl_readRegB, data_writeReg,
-			data_readRegA, data_readRegB, wren
-			);	//parameter for testing
+module skeleton(clock, reset, imem_clock, dmem_clock, processor_clock, regfile_clock);	//parameter for testing
     input clock, reset;
     /* 
         Create four clocks for each module from the original input "clock".
@@ -25,8 +20,6 @@ module skeleton(clock, reset, imem_clock, dmem_clock, processor_clock, regfile_c
     */
     output imem_clock, dmem_clock, processor_clock, regfile_clock;
 	 
-	 
-	 output [4:0] overflow_test, aluOp;
 	 
 	 //clock is a 20 ns 
 	 wire clk_div2, clk_div4;
@@ -44,8 +37,8 @@ module skeleton(clock, reset, imem_clock, dmem_clock, processor_clock, regfile_c
     /** IMEM **/
     // Figure out how to generate a Quartus syncram component and commit the generated verilog file.
     // Make sure you configure it correctly!
-    output wire [11:0] address_imem;
-    output wire [31:0] q_imem;
+    wire [11:0] address_imem;
+    wire [31:0] q_imem;
     imem my_imem(
         .address    (address_imem),            // address of data
         .clock      (imem_clock),                  // you may need to invert the clock
@@ -55,10 +48,10 @@ module skeleton(clock, reset, imem_clock, dmem_clock, processor_clock, regfile_c
     /** DMEM **/
     // Figure out how to generate a Quartus syncram component and commit the generated verilog file.
     // Make sure you configure it correctly!
-    output wire [11:0] address_dmem;
-    output wire [31:0] data;
-    output wire wren;
-    output wire [31:0] q_dmem;
+    wire [11:0] address_dmem;
+    wire [31:0] data;
+    wire wren;
+    wire [31:0] q_dmem;
     dmem my_dmem(
         .address    (address_dmem),       // address of data
         .clock      (dmem_clock),                  // may need to invert the clock
@@ -70,10 +63,10 @@ module skeleton(clock, reset, imem_clock, dmem_clock, processor_clock, regfile_c
 
     /** REGFILE **/
     // Instantiate your regfile
-    output wire ctrl_writeEnable;
-    output wire [4:0] ctrl_writeReg, ctrl_readRegA, ctrl_readRegB;
-    output wire [31:0] data_writeReg;
-    output wire [31:0] data_readRegA, data_readRegB;
+    wire ctrl_writeEnable;
+    wire [4:0] ctrl_writeReg, ctrl_readRegA, ctrl_readRegB;
+    wire [31:0] data_writeReg;
+    wire [31:0] data_readRegA, data_readRegB;
     regfile my_regfile(
         regfile_clock,
         ctrl_writeEnable,
@@ -109,10 +102,7 @@ module skeleton(clock, reset, imem_clock, dmem_clock, processor_clock, regfile_c
         ctrl_readRegB,                  // O: Register to read from port B of regfile
         data_writeReg,                  // O: Data to write to for regfile
         data_readRegA,                  // I: Data from port A of regfile
-        data_readRegB,                   // I: Data from port B of regfile
-		  
-		  overflow_test,					//test 
-		  aluOp
+        data_readRegB                   // I: Data from port B of regfile
 	);
 	 
 	 
