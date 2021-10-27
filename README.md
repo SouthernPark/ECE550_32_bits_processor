@@ -15,6 +15,13 @@ processor_clock = ~clk_div4
 ## Control bits and ALU
 Firstly, I hardcoded the control bits using ROM (multiple regs), the format of my control bits is below:  
 
+
+| BR  | JR | ALUinB | ALUOp(5bits) | DMwe | Rwe | Rdst | Rwd |  
+| --- | -- | ------ | ------------ | ---- | --- | ---- | --- |
+|  0  |  0 |   0    |     xxxxx    |  0   |  1  |   1  |  0  |
+
+
+
 >BR JR ALUinB ALUop(4bits) DMwe Rwe Rdst Rwd  
  0  0    0      xxxxx       0   1   1    0      (control bits for R type: add, sub, and, or, sll, sra)  
  0  0    1      00000       0   1   0    0      (control bits for addi)  
