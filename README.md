@@ -16,9 +16,9 @@ processor_clock = ~clk_div4
 Firstly, I hardcoded the control bits using ROM (multiple regs), the format of my control bits is below:  
 BR JR ALUinB ALUop(4bits) DMwe Rwe Rdst Rwd  
  0  0    0      xxxxx       0   1   1    0      (control bits for R type: add, sub, and, or, sll, sra)  
- 0  0    1      00000       0   1   0    0      (control bits for addi)
- 0  0    1      00000       1   0   x    x      (control bits for sw)
- 0  0    1      00000       0   1   0    1      (control bits for lw)
+ 0  0    1      00000       0   1   0    0      (control bits for addi)  
+ 0  0    1      00000       1   0   x    x      (control bits for sw)  
+ 0  0    1      00000       0   1   0    1      (control bits for lw)  
 Totally it is 12 bits
 
 Secondly, I initialzed my alu.  
